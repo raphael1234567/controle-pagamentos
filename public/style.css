@@ -405,6 +405,7 @@ tbody tr:hover           { background: #edf7f1; }
 .status.PAGO            { background: #dcfae6; color: #067647; }
 .status.PENDENTE        { background: #f2f4f7; color: #475467; }
 .status.PERTO_DE_VENCER { background: #fef0c7; color: var(--amarelo); }
+.status.VENCE_HOJE      { background: #ffedd5; color: #ea580c; }
 .status.VENCIDO         { background: #fee4e2; color: var(--erro); }
 
 .texto-suave { color: var(--cinza); font-size: 12px; }

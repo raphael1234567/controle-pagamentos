@@ -111,6 +111,7 @@ function statusAutomatico(dataVencimento, dataPago) {
   if (venc < hoje) return 'VENCIDO';
   const diasAviso = Number(process.env.DIAS_AVISO_VENCIMENTO || 3);
   const diff = Math.floor((venc - hoje) / 864e5);
+  if (diff === 0) return 'VENCE_HOJE';
   return diff <= diasAviso ? 'PERTO_DE_VENCER' : 'PENDENTE';
 }
 
@@ -122,7 +123,8 @@ async function verificarVencimentos() {
   try {
     const diasAviso = Number(process.env.DIAS_AVISO_VENCIMENTO || 3);
     const { rows } = await pool.query(`
-      SELECT id, nome, valor, juros, valor+juros AS valor_total,
+      SELECT id, nome, valor,
+             TO_CHAR(data_pagamento,'YYYY-MM-DD')  AS data_pagamento,
              TO_CHAR(data_vencimento,'YYYY-MM-DD') AS data_vencimento,
              CURRENT_DATE - data_vencimento AS dias_atraso,
              email_vencimento_enviado, email_proximo_enviado
@@ -133,8 +135,10 @@ async function verificarVencimentos() {
     for (const p of rows) {
       const atraso = Number(p.dias_atraso);
       if (atraso > 0 && !p.email_vencimento_enviado) {
+        const jurosAtual = calcularJuros(Number(p.valor), p.data_pagamento, p.data_vencimento);
+        const totalAtual = Number(p.valor) + jurosAtual;
         await enviarEmail(`Pagamento vencido - ${p.nome}`,
-          `Vencido.\n\nNome: ${p.nome}\nVencimento: ${p.data_vencimento}\nValor: R$ ${Number(p.valor).toFixed(2)}\nJuros: R$ ${Number(p.juros).toFixed(2)}\nTotal: R$ ${Number(p.valor_total).toFixed(2)}\nAtraso: ${atraso} dia(s)`);
+          `Pagamento vencido!\n\nNome: ${p.nome}\nVencimento: ${p.data_vencimento}\nValor original: R$ ${Number(p.valor).toFixed(2)}\nJuros acumulados: R$ ${jurosAtual.toFixed(2)}\nValor atualizado: R$ ${totalAtual.toFixed(2)}\nDias em atraso: ${atraso} dia(s)`);
         await pool.query(`UPDATE public.pagamentos SET email_vencimento_enviado=TRUE WHERE id=$1`, [p.id]);
       }
 
@@ -143,8 +147,10 @@ async function verificarVencimentos() {
         const venc = new Date(`${p.data_vencimento}T00:00:00`); venc.setHours(0, 0, 0, 0);
         const faltam = Math.floor((venc - hoje) / 864e5);
         if (faltam >= 0 && faltam <= diasAviso) {
-          await enviarEmail(`Perto de vencer - ${p.nome}`,
-            `Perto de vencer.\n\nNome: ${p.nome}\nVencimento: ${p.data_vencimento}\nValor: R$ ${Number(p.valor).toFixed(2)}\nJuros: R$ ${Number(p.juros).toFixed(2)}\nTotal: R$ ${Number(p.valor_total).toFixed(2)}\nFaltam ${faltam} dia(s)`);
+          const assunto = faltam === 0 ? `Vence hoje - ${p.nome}` : `Perto de vencer - ${p.nome}`;
+          const prazo   = faltam === 0 ? `Vence hoje!` : `Faltam ${faltam} dia(s)`;
+          await enviarEmail(assunto,
+            `${faltam === 0 ? 'Vence hoje' : 'Perto de vencer'}.\n\nNome: ${p.nome}\nVencimento: ${p.data_vencimento}\nValor: R$ ${Number(p.valor).toFixed(2)}\nJuros: R$ ${Number(p.juros).toFixed(2)}\nTotal: R$ ${Number(p.valor_total).toFixed(2)}\n${prazo}`);
           await pool.query(`UPDATE public.pagamentos SET email_proximo_enviado=TRUE WHERE id=$1`, [p.id]);
         }
       }
@@ -470,7 +476,7 @@ function fillPDF(doc, rows, titulo, subtitulo) {
 
   const dBR = d => { if (!d) return '-'; const [a, m, di] = d.split('-'); return `${di}/${m}/${a}`; };
   const mBR = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  const sBR = s => ({ PENDENTE: 'Pendente', PERTO_DE_VENCER: 'Perto vencer', VENCIDO: 'Vencido', PAGO: 'Pago' }[s] || s);
+  const sBR = s => ({ PENDENTE: 'Pendente', PERTO_DE_VENCER: 'Perto vencer', VENCE_HOJE: 'Vence hoje', VENCIDO: 'Vencido', PAGO: 'Pago' }[s] || s);
 
   // widths: 150+75+75+90+90+90+90+102 = 762
   const COLS = [

@@ -493,7 +493,7 @@ async function carregarListaEResumo() {
 }
 
 function statusTexto(s) {
-  return { PENDENTE: 'PENDENTE', PERTO_DE_VENCER: 'PERTO DE VENCER', VENCIDO: 'VENCIDO', PAGO: 'PAGO' }[s] || s;
+  return { PENDENTE: 'PENDENTE', PERTO_DE_VENCER: 'PERTO DE VENCER', VENCE_HOJE: 'VENCE HOJE', VENCIDO: 'VENCIDO', PAGO: 'PAGO' }[s] || s;
 }
 
 function renderizar() {
