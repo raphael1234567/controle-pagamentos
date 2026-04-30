@@ -1,0 +1,24 @@
+{
+  "name": "Controle de Pagamentos",
+  "short_name": "Pagamentos",
+  "description": "Sistema de controle de pagamentos e empréstimos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f4f3",
+  "theme_color": "#0f5132",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

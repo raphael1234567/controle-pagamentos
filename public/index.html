@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f5132" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Pagamentos" />
+  <title>Controle de Pagamentos</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+</head>
+
+<body>
+
+  <!-- ── Auth ─────────────────────────────────────────────────────────── -->
+  <section id="authArea" class="auth-card">
+    <div class="auth-logo">💰</div>
+    <h1>Controle de Pagamentos</h1>
+    <p>Entre para acessar seus pagamentos</p>
+
+    <div class="tabs">
+      <button id="tabLogin" class="tab ativa">Login</button>
+      <button id="tabCadastro" class="tab">Cadastrar</button>
+    </div>
+
+    <form id="formAuth">
+      <label id="grupoNome">Nome
+        <input id="authNome" type="text" placeholder="Seu nome" autocomplete="name" />
+      </label>
+      <label>Email
+        <input id="authEmail" type="email" placeholder="seuemail@gmail.com" required autocomplete="email" />
+      </label>
+      <label>Senha
+        <input id="authSenha" type="password" placeholder="Mínimo 6 caracteres" required autocomplete="current-password" />
+      </label>
+      <button class="btn principal btn-full" type="submit" id="btnAuth">Entrar</button>
+    </form>
+  </section>
+
+  <!-- ── App ───────────────────────────────────────────────────────────── -->
+  <div id="appArea" class="hidden">
+
+    <header class="topo">
+      <div class="topo-info">
+        <h1>💰 Pagamentos</h1>
+        <p id="usuarioLogado"></p>
+      </div>
+      <div class="topo-acoes">
+        <button id="btnAtualizar" class="btn secundario">↻ Atualizar</button>
+        <button id="btnSair" class="btn perigo">Sair</button>
+      </div>
+    </header>
+
+    <!-- ── Seção 1: Dashboard ─────────────────────────────────────────── -->
+    <section class="secao secao-ativa" id="secInicio">
+
+      <div class="sec-cabecalho">
+        <h2 class="sec-titulo">Dashboard</h2>
+        <label class="label-inline">Mês
+          <input id="mesResumo" type="month" />
+        </label>
+      </div>
+
+      <!-- Cards financeiros -->
+      <div class="cards">
+        <div class="card-resumo">
+          <span>Total sem juros</span>
+          <strong id="totalEmprestado">R$ 0,00</strong>
+        </div>
+        <div class="card-resumo">
+          <span>Total de juros</span>
+          <strong id="totalJuros">R$ 0,00</strong>
+        </div>
+        <div class="card-resumo destaque">
+          <span>Total a receber</span>
+          <strong id="totalComJuros">R$ 0,00</strong>
+        </div>
+        <div class="card-resumo recebido">
+          <span>Total recebido</span>
+          <strong id="totalRecebido">R$ 0,00</strong>
+        </div>
+        <div class="card-resumo alerta">
+          <span>Total vencido</span>
+          <strong id="totalVencido">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <!-- Gráficos — linha 1 -->
+      <div class="graficos-grid">
+        <div class="grafico-painel">
+          <h3 class="grafico-titulo">📈 Evolução mensal</h3>
+          <div class="grafico-wrap">
+            <canvas id="graficoMensal"></canvas>
+          </div>
+        </div>
+        <div class="grafico-painel">
+          <h3 class="grafico-titulo">🍩 Distribuição por status</h3>
+          <div class="grafico-wrap grafico-wrap-sm">
+            <canvas id="graficoStatus"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico — clientes -->
+      <div class="grafico-painel">
+        <h3 class="grafico-titulo">👥 Valores por cliente</h3>
+        <div class="grafico-wrap" id="graficoClientesWrap">
+          <canvas id="graficoClientes"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ── Seção 2: Novo pagamento ────────────────────────────────────── -->
+    <section class="secao" id="secNovo">
+      <div class="painel">
+        <h2 id="tituloForm">Novo pagamento</h2>
+        <form id="formPagamento">
+          <input type="hidden" id="pagamentoId" />
+          <div class="grid">
+            <label>Nome<input id="nome" type="text" placeholder="Ex: JOÃO" required autocomplete="off" /></label>
+            <label>Data que pegou<input id="dataPagamento" type="date" required /></label>
+            <label>Data que vai pagar<input id="dataVencimento" type="date" /></label>
+            <label>Valor<input id="valor" type="text" inputmode="decimal" placeholder="Ex: 200,00" required /></label>
+          </div>
+          <label>Observação<input id="observacao" type="text" placeholder="Opcional" /></label>
+          <div class="acoes">
+            <button class="btn principal" type="submit">Salvar</button>
+            <button class="btn secundario" id="btnCancelar" type="button">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── Seção 3: Lista de pagamentos ──────────────────────────────── -->
+    <section class="secao" id="secLista">
+      <div class="sec-cabecalho">
+        <h2 class="sec-titulo">Lista de pagamentos</h2>
+        <button id="btnExtratoCompleto" class="btn secundario" type="button">📄 Extrato PDF</button>
+      </div>
+      <div class="painel">
+
+        <!-- Filtros rápidos -->
+        <div class="filtros-rapidos">
+          <button class="btn-filtro" data-filtro="hoje">Hoje</button>
+          <button class="btn-filtro" data-filtro="semana">Essa semana</button>
+          <button class="btn-filtro" data-filtro="mes">Esse mês</button>
+          <button class="btn-filtro" data-filtro="vencidos">Vencidos</button>
+          <button id="btnLimparFiltros" class="btn-filtro limpar">✕ Limpar</button>
+        </div>
+
+        <!-- Busca + status -->
+        <div class="barra-filtros">
+          <input id="busca" type="text" placeholder="🔍 Buscar por nome..." />
+          <select id="filtroStatus">
+            <option value="TODOS">Todos os status</option>
+            <option value="PENDENTE">Pendente</option>
+            <option value="PERTO_DE_VENCER">Perto de vencer</option>
+            <option value="VENCIDO">Vencido</option>
+            <option value="PAGO">Pago</option>
+          </select>
+        </div>
+
+        <!-- Período -->
+        <div class="filtro-periodo">
+          <span>De</span>
+          <input id="inputDataInicio" type="date" />
+          <span>até</span>
+          <input id="inputDataFim" type="date" />
+        </div>
+
+        <!-- Tabela -->
+        <div class="tabela-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th class="th-sort" data-col="nome">Pagamentos <span class="sort-icon"></span></th>
+                <th class="th-sort" data-col="data_pagamento">Data que pegou <span class="sort-icon"></span></th>
+                <th class="th-sort" data-col="data_vencimento">Data que vai pagar <span class="sort-icon"></span></th>
+                <th class="th-sort" data-col="valor">Valor <span class="sort-icon"></span></th>
+                <th>Juros</th>
+                <th class="th-sort" data-col="valor_total">Total a receber <span class="sort-icon"></span></th>
+                <th>Status</th>
+                <th>Pago em</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyPagamentos"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Nav inferior (mobile) ─────────────────────────────────────── -->
+    <nav class="nav-bottom">
+      <button class="nav-item ativa" data-secao="secInicio">
+        <span class="nav-icon">🏠</span>
+        <span>Início</span>
+      </button>
+      <button class="nav-item" data-secao="secNovo">
+        <span class="nav-icon">➕</span>
+        <span>Novo</span>
+      </button>
+      <button class="nav-item" data-secao="secLista">
+        <span class="nav-icon">📋</span>
+        <span>Lista</span>
+      </button>
+    </nav>
+
+  </div><!-- /appArea -->
+
+  <!-- Modal: extrato PDF -->
+  <div id="modalExtrato" class="modal-overlay hidden">
+    <div class="modal-box modal-extrato">
+      <h3 id="extratoTitulo">Extrato em PDF</h3>
+      <p id="extratoSubtitulo" class="extrato-desc"></p>
+
+      <div class="extrato-filtros">
+        <div class="extrato-linha">
+          <label class="label-mini">De (data que pegou)
+            <input id="extratoDtInicio" type="date" />
+          </label>
+          <label class="label-mini">Até
+            <input id="extratoDtFim" type="date" />
+          </label>
+        </div>
+        <label class="label-mini">Status
+          <select id="extratoFiltroStatus">
+            <option value="">Todos</option>
+            <option value="PENDENTE">Pendente</option>
+            <option value="PERTO_DE_VENCER">Perto de vencer</option>
+            <option value="VENCIDO">Vencido</option>
+            <option value="PAGO">Pago</option>
+          </select>
+        </label>
+        <label class="label-mini" id="grupoExtratoBusca">Filtrar por nome (opcional)
+          <input id="extratoBusca" type="text" placeholder="Ex: JOÃO" autocomplete="off" />
+        </label>
+      </div>
+
+      <hr class="extrato-sep" />
+
+      <label class="label-mini">Enviar por e-mail (opcional)
+        <input id="extratoEmailInput" type="email" placeholder="destinatario@email.com" />
+      </label>
+
+      <div id="extratoLoading" class="extrato-loading hidden">
+        <div class="loading-spinner"></div>
+        <span>Gerando PDF...</span>
+      </div>
+
+      <div class="modal-acoes">
+        <button id="btnBaixarExtrato"  class="btn principal"   type="button">⬇ Baixar PDF</button>
+        <button id="btnEnviarExtrato"  class="btn secundario"  type="button">✉ Enviar e-mail</button>
+        <button id="btnFecharExtrato"  class="btn secundario"  type="button">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: confirmar data de pagamento -->
+  <div id="modalPagar" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>Confirmar pagamento</h3>
+      <label>Data do pagamento
+        <input id="inputDataPago" type="date" />
+      </label>
+      <div class="modal-acoes">
+        <button id="btnConfirmarPago" class="btn principal" type="button">Confirmar</button>
+        <button id="btnCancelarPago"  class="btn secundario" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
