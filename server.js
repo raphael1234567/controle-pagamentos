@@ -403,6 +403,7 @@ app.post('/api/pagamentos', autenticar, async (req, res) => {
       [req.usuario.id, nome.trim().toUpperCase(), dataPagamento, venc, valorNum, juros, observacao || null]
     );
     res.json({ sucesso: true, mensagem: 'Pagamento salvo com sucesso' });
+    enviarExtratoAutomatico(req.usuario.id, req.usuario.nome).catch(() => {});
   } catch (e) { console.error(e); res.status(500).json({ erro: 'Erro ao salvar pagamento' }); }
 });
 
@@ -599,6 +600,24 @@ async function enviarEmailComPDF(para, assunto, texto, filename, buf) {
     text:    texto,
     attachments: [{ filename, content: buf, contentType: 'application/pdf' }]
   });
+}
+
+async function enviarExtratoAutomatico(uid, nomeUsuario) {
+  if (!process.env.EMAIL_DESTINO || !process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+  try {
+    const rows = await fetchExtratoRows(uid, {});
+    if (!rows.length) return;
+    const titulo    = 'Extrato Completo de Pagamentos';
+    const subtitulo = `Usuário: ${nomeUsuario}  |  ${rows.length} registro(s)  |  ${new Date().toLocaleDateString('pt-BR')}`;
+    const buf = await buildPDF(rows, titulo, subtitulo);
+    await enviarEmailComPDF(
+      process.env.EMAIL_DESTINO,
+      `Extrato atualizado — ${new Date().toLocaleDateString('pt-BR')}`,
+      `Novo empréstimo registrado. Segue o extrato completo atualizado.\n\nTotal de registros: ${rows.length}`,
+      'extrato-completo.pdf',
+      buf
+    );
+  } catch (err) { console.error('Erro ao enviar extrato automático:', err); }
 }
 
 // ─── Rotas: extratos PDF ──────────────────────────────────────────────────────
