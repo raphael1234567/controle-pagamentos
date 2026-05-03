@@ -229,18 +229,26 @@ app.get('/api/resumo', autenticar, async (req, res) => {
     if (busca)      { params.push(`%${busca}%`); where.push(`nome ILIKE $${params.length}`); }
 
     const { rows } = await pool.query(`
-      SELECT valor, juros, valor+juros AS valor_total,
+      SELECT valor, juros,
+             TO_CHAR(data_pagamento, 'YYYY-MM-DD') AS data_pagamento,
              TO_CHAR(data_vencimento,'YYYY-MM-DD') AS data_vencimento,
              TO_CHAR(data_pago,     'YYYY-MM-DD')  AS data_pago
       FROM public.pagamentos
       WHERE ${where.join(' AND ')}
     `, params);
 
-    // Status é calculado dinamicamente — filtrar no JS igual ao /api/pagamentos
-    let lista = rows.map(p => ({
-      ...p,
-      status_pagamento: statusAutomatico(p.data_vencimento, p.data_pago)
-    }));
+    // Status e juros são calculados dinamicamente para refletir acúmulo diário
+    let lista = rows.map(p => {
+      const juros = p.data_pago
+        ? Number(p.juros)
+        : calcularJuros(Number(p.valor), p.data_pagamento, p.data_vencimento);
+      return {
+        ...p,
+        juros,
+        valor_total: Number(p.valor) + juros,
+        status_pagamento: statusAutomatico(p.data_vencimento, p.data_pago)
+      };
+    });
 
     if (status && status !== 'TODOS')
       lista = lista.filter(p => p.status_pagamento === status);
@@ -350,11 +358,18 @@ app.get('/api/pagamentos', autenticar, async (req, res) => {
       ORDER BY ${coluna} ${direcao}, id DESC
     `, params);
 
-    let lista = rows.map(p => ({
-      ...p,
-      status_pagamento: statusAutomatico(p.data_vencimento, p.data_pago),
-      dias_atraso:      diasAtraso(p.data_vencimento, p.data_pago)
-    }));
+    let lista = rows.map(p => {
+      const juros = p.data_pago
+        ? Number(p.juros)
+        : calcularJuros(Number(p.valor), p.data_pagamento, p.data_vencimento);
+      return {
+        ...p,
+        juros,
+        valor_total: Number(p.valor) + juros,
+        status_pagamento: statusAutomatico(p.data_vencimento, p.data_pago),
+        dias_atraso:      diasAtraso(p.data_vencimento, p.data_pago)
+      };
+    });
 
     if (status && status !== 'TODOS') lista = lista.filter(p => p.status_pagamento === status);
 
