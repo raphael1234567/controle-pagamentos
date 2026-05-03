@@ -27,7 +27,8 @@ const observacao     = $('observacao');
 const tbody          = $('tbodyPagamentos');
 const busca          = $('busca');
 const filtroStatus   = $('filtroStatus');
-const mesResumo      = $('mesResumo');
+const mesResumo         = $('mesResumo');
+const selectClienteDash = $('filtroClienteDash');
 const btnCancelar    = $('btnCancelar');
 const tituloForm     = $('tituloForm');
 
@@ -61,6 +62,8 @@ let pagamentos       = [];
 let modoCadastro     = false;
 let _resolveDataPago = null;
 let extratoNomePessoa = null;
+
+let filtroClienteDash = '';
 
 let filtroRapido   = null;
 let filtroDtInicio = '';
@@ -229,6 +232,21 @@ function sair() {
 
 // ─── Resumo financeiro ────────────────────────────────────────────────────────
 
+async function carregarNomes() {
+  const res = await fetch(`${API_BASE}/nomes`, { headers: headers() });
+  if (!res.ok) return;
+  const nomes = await res.json();
+  const atual = selectClienteDash.value;
+  selectClienteDash.innerHTML = '<option value="">Todos os clientes</option>';
+  nomes.forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n;
+    opt.textContent = n;
+    selectClienteDash.appendChild(opt);
+  });
+  selectClienteDash.value = nomes.includes(atual) ? atual : '';
+}
+
 async function carregarResumo() {
   const p = new URLSearchParams();
 
@@ -243,7 +261,8 @@ async function carregarResumo() {
   // Estes filtros se combinam com qualquer período
   if (filtroVencIni)                                        p.append('vencInicio', filtroVencIni);
   if (filtroVencFim)                                        p.append('vencFim',    filtroVencFim);
-  if (busca.value.trim())                                   p.append('busca',      busca.value.trim());
+  const buscaParam = filtroClienteDash || busca.value.trim();
+  if (buscaParam)                                            p.append('busca',      buscaParam);
   if (filtroStatus.value && filtroStatus.value !== 'TODOS') p.append('status',     filtroStatus.value);
 
   const res = await fetch(`${API_BASE}/resumo?${p}`, { headers: headers() });
@@ -499,7 +518,7 @@ async function carregarPagamentos() {
 }
 
 async function carregarTudo() {
-  await Promise.all([carregarResumo(), carregarPagamentos(), carregarGraficos()]);
+  await Promise.all([carregarResumo(), carregarPagamentos(), carregarGraficos(), carregarNomes()]);
 }
 
 async function carregarListaEResumo() {
@@ -626,6 +645,10 @@ form.addEventListener('submit', salvar);
 btnCancelar.addEventListener('click', limparForm);
 btnAtualizar.addEventListener('click', carregarTudo);
 mesResumo.addEventListener('change', () => { carregarResumo(); carregarGraficos(); });
+selectClienteDash.addEventListener('change', () => {
+  filtroClienteDash = selectClienteDash.value;
+  carregarResumo();
+});
 
 busca.addEventListener('input', () => {
   filtroRapido = null; ativarBtnFiltro(null);

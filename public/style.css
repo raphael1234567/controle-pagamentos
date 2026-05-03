@@ -142,11 +142,19 @@ body {
   white-space: nowrap;
 }
 
-.label-inline input {
+.label-inline input,
+.label-inline select {
   width: auto;
   margin: 0;
   padding: 8px 10px;
   font-size: 14px;
+}
+
+.dash-filtros {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 /* ── Cards de resumo ───────────────────────────────────────────────────── */

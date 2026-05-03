@@ -322,6 +322,18 @@ app.get('/api/graficos', autenticar, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ erro: 'Erro ao buscar dados dos gráficos' }); }
 });
 
+// ─── Rotas: nomes de clientes ─────────────────────────────────────────────────
+
+app.get('/api/nomes', autenticar, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT DISTINCT nome FROM public.pagamentos WHERE usuario_id=$1 AND cancelado_em IS NULL ORDER BY nome`,
+      [req.usuario.id]
+    );
+    res.json(rows.map(r => r.nome));
+  } catch (e) { console.error(e); res.status(500).json({ erro: 'Erro ao buscar nomes' }); }
+});
+
 // ─── Rotas: pagamentos ────────────────────────────────────────────────────────
 
 app.get('/api/pagamentos', autenticar, async (req, res) => {
