@@ -96,6 +96,20 @@ function dataBR(d) {
 function hojeISO()  { return new Date().toISOString().slice(0, 10); }
 function mesAtual() { return new Date().toISOString().slice(0, 7); }
 
+function popularMesResumo() {
+  if (mesResumo.options.length) return;
+  mesResumo.innerHTML = '<option value="">Todos os meses</option>';
+  const d = new Date();
+  for (let i = 0; i < 13; i++) {
+    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = formatarMesLabel(val);
+    mesResumo.appendChild(opt);
+    d.setMonth(d.getMonth() - 1);
+  }
+}
+
 function calcularVencimento(d) {
   if (!d) return '';
   const x = new Date(`${d}T00:00:00`);
@@ -171,7 +185,7 @@ function mostrarApp() {
     authArea.classList.add('hidden');
     appArea.classList.remove('hidden');
     usuarioLogado.textContent = `${u.nome} · ${u.email}`;
-    mesResumo.value = mesResumo.value || mesAtual();
+    popularMesResumo();
     carregarTudo();
   } else {
     authArea.classList.remove('hidden');
@@ -223,7 +237,7 @@ async function carregarResumo() {
     if (filtroDtInicio) p.append('dataInicio', filtroDtInicio);
     if (filtroDtFim)    p.append('dataFim',    filtroDtFim);
   } else {
-    p.append('mes', mesResumo.value || mesAtual());
+    if (mesResumo.value) p.append('mes', mesResumo.value);
   }
 
   // Estes filtros se combinam com qualquer período
