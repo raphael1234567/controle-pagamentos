@@ -85,8 +85,8 @@ function calcularJuros(valor, dataPagamento, dataVencimento, dataRef = new Date(
 
   const diasEmprestimo = Math.max(0, Math.floor((venc - pegou) / 864e5));
 
-  // Meses cheios iniciados: 40% sobre o saldo acumulado de cada mês
-  const meses = Math.max(1, Math.ceil(diasEmprestimo / 30));
+  // Mínimo 2 meses para garantir ao menos 40% no 1º mês (mês 1 = base, mês 2 = 40% × 1.40)
+  const meses = Math.max(2, Math.ceil(diasEmprestimo / 30));
   let juros = valor * 0.40 * Math.pow(1.40, meses - 1);
 
   // Acréscimo de 2% ao dia após vencimento
@@ -238,11 +238,16 @@ app.get('/api/resumo', autenticar, async (req, res) => {
       WHERE ${where.join(' AND ')}
     `, params);
 
-    // Status e juros são calculados dinamicamente para refletir acúmulo diário
     let lista = rows.map(p => {
-      const juros = p.data_pago
-        ? Number(p.juros)
-        : calcularJuros(Number(p.valor), p.data_pagamento, p.data_vencimento);
+      let juros = Number(p.juros);
+      if (!p.data_pago) {
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const venc = new Date(`${p.data_vencimento}T00:00:00`); venc.setHours(0, 0, 0, 0);
+        if (hoje > venc) {
+          const atraso = Math.floor((hoje - venc) / 864e5);
+          juros += atraso * (Number(p.valor) * 0.02);
+        }
+      }
       return {
         ...p,
         juros,
@@ -372,9 +377,15 @@ app.get('/api/pagamentos', autenticar, async (req, res) => {
     `, params);
 
     let lista = rows.map(p => {
-      const juros = p.data_pago
-        ? Number(p.juros)
-        : calcularJuros(Number(p.valor), p.data_pagamento, p.data_vencimento);
+      let juros = Number(p.juros);
+      if (!p.data_pago) {
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const venc = new Date(`${p.data_vencimento}T00:00:00`); venc.setHours(0, 0, 0, 0);
+        if (hoje > venc) {
+          const atraso = Math.floor((hoje - venc) / 864e5);
+          juros += atraso * (Number(p.valor) * 0.02);
+        }
+      }
       return {
         ...p,
         juros,
@@ -474,9 +485,15 @@ async function fetchExtratoRows(uid, f) {
   `, params);
 
   let lista = rows.map(p => {
-    const juros = p.data_pago
-      ? Number(p.juros)
-      : calcularJuros(Number(p.valor), p.data_pagamento, p.data_vencimento);
+    let juros = Number(p.juros);
+    if (!p.data_pago) {
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      const venc = new Date(`${p.data_vencimento}T00:00:00`); venc.setHours(0, 0, 0, 0);
+      if (hoje > venc) {
+        const atraso = Math.floor((hoje - venc) / 864e5);
+        juros += atraso * (Number(p.valor) * 0.02);
+      }
+    }
     return {
       ...p,
       juros,
