@@ -83,10 +83,12 @@ function calcularJuros(valor, dataPagamento, dataVencimento, dataRef = new Date(
   const venc  = new Date(`${dataVencimento}T00:00:00`); venc.setHours(0, 0, 0, 0);
   const hoje  = new Date(dataRef); hoje.setHours(0, 0, 0, 0);
 
-  // 40% ao mês, proporcional aos dias do empréstimo (mínimo 1 mês)
-  const diasEmprestimo = Math.floor((venc - pegou) / 864e5);
-  const meses = Math.max(1, diasEmprestimo / 30);
-  let juros = valor * 0.40 * meses;
+  const diasEmprestimo = Math.max(0, Math.floor((venc - pegou) / 864e5));
+
+  // Até 30 dias: 40% fixo. Acima de 30 dias: 40% proporcional aos meses
+  let juros = diasEmprestimo <= 30
+    ? valor * 0.40
+    : valor * 0.40 * (diasEmprestimo / 30);
 
   // Acréscimo de 2% ao dia após vencimento
   if (hoje > venc) {
@@ -472,11 +474,18 @@ async function fetchExtratoRows(uid, f) {
     ORDER BY data_vencimento ASC, id DESC
   `, params);
 
-  let lista = rows.map(p => ({
-    ...p,
-    status_pagamento: statusAutomatico(p.data_vencimento, p.data_pago),
-    dias_atraso:      diasAtraso(p.data_vencimento, p.data_pago)
-  }));
+  let lista = rows.map(p => {
+    const juros = p.data_pago
+      ? Number(p.juros)
+      : calcularJuros(Number(p.valor), p.data_pagamento, p.data_vencimento);
+    return {
+      ...p,
+      juros,
+      valor_total: Number(p.valor) + juros,
+      status_pagamento: statusAutomatico(p.data_vencimento, p.data_pago),
+      dias_atraso:      diasAtraso(p.data_vencimento, p.data_pago)
+    };
+  });
 
   if (f.status && f.status !== 'TODOS')
     lista = lista.filter(p => p.status_pagamento === f.status);
