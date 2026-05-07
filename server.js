@@ -85,10 +85,9 @@ function calcularJuros(valor, dataPagamento, dataVencimento, dataRef = new Date(
 
   const diasEmprestimo = Math.max(0, Math.floor((venc - pegou) / 864e5));
 
-  // Até 30 dias: 40% fixo. Acima de 30 dias: 40% proporcional aos meses
-  let juros = diasEmprestimo <= 30
-    ? valor * 0.40
-    : valor * 0.40 * (diasEmprestimo / 30);
+  // 40% aplicado sobre o total do mês (valor × 1,40), proporcional para mais de 30 dias
+  const meses = diasEmprestimo <= 30 ? 1 : diasEmprestimo / 30;
+  let juros = valor * 1.40 * 0.40 * meses;
 
   // Acréscimo de 2% ao dia após vencimento
   if (hoje > venc) {
