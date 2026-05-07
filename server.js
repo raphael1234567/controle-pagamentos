@@ -165,7 +165,10 @@ verificarVencimentos();
 // ─── Rotas: saúde ─────────────────────────────────────────────────────────────
 
 app.get('/api/health', async (req, res) => {
-  try { await pool.query('SELECT 1'); res.json({ sucesso: true }); }
+  try {
+    await pool.query('SELECT 1');
+    res.json({ sucesso: true, versao: '2026-05-07-v2', juros_teste: calcularJuros(250, '2026-05-07', '2026-05-30') });
+  }
   catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
