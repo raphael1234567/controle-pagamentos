@@ -85,7 +85,7 @@ function calcularJuros(valor, dataPagamento, dataVencimento, dataRef = new Date(
 
   const diasEmprestimo = Math.max(0, Math.floor((venc - pegou) / 864e5));
 
-  const meses = Math.max(1, Math.ceil(diasEmprestimo / 30));
+  const meses = Math.max(2, Math.ceil(diasEmprestimo / 30));
   let juros = valor * 0.40 * Math.pow(1.40, meses - 1);
 
   // Acréscimo de 2% ao dia após vencimento
@@ -166,7 +166,7 @@ verificarVencimentos();
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ sucesso: true, versao: '2026-05-07-v3', juros_teste_100: calcularJuros(100, '2026-05-07', '2026-06-07') });
+    res.json({ sucesso: true, versao: '2026-05-08-v4', juros_250: calcularJuros(250, '2026-05-08', '2026-06-08') });
   }
   catch (e) { res.status(500).json({ erro: e.message }); }
 });
