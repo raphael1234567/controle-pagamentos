@@ -83,9 +83,12 @@ function calcularJuros(valor, dataPagamento, dataVencimento, dataRef = new Date(
   const venc  = new Date(`${dataVencimento}T00:00:00`); venc.setHours(0, 0, 0, 0);
   const hoje  = new Date(dataRef); hoje.setHours(0, 0, 0, 0);
 
-  const diasEmprestimo = Math.max(0, Math.floor((venc - pegou) / 864e5));
+  // Meses de calendário: 08/mai→08/jun = 1 mês, 08/mai→09/jun = 2 meses
+  let meses = (venc.getFullYear() - pegou.getFullYear()) * 12
+            + (venc.getMonth() - pegou.getMonth());
+  if (venc.getDate() > pegou.getDate()) meses++;
+  meses = Math.max(1, meses);
 
-  const meses = Math.max(1, Math.ceil(diasEmprestimo / 30));
   let juros = valor * 0.40 * Math.pow(1.40, meses - 1);
 
   // Acréscimo de 2% ao dia após vencimento
@@ -166,7 +169,7 @@ verificarVencimentos();
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ sucesso: true, versao: '2026-05-08-v7', j100: calcularJuros(100,'2026-05-08','2026-06-08'), j250: calcularJuros(250,'2026-05-08','2026-06-08'), j300: calcularJuros(300,'2026-05-08','2026-06-08') });
+    res.json({ sucesso: true, versao: '2026-05-08-v8', j100: calcularJuros(100,'2026-05-08','2026-06-08'), j250: calcularJuros(250,'2026-05-08','2026-06-08'), j300: calcularJuros(300,'2026-05-08','2026-06-08') });
   }
   catch (e) { res.status(500).json({ erro: e.message }); }
 });
