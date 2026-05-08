@@ -166,7 +166,7 @@ verificarVencimentos();
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ sucesso: true, versao: '2026-05-08-v6', j100: calcularJuros(100,'2026-05-08','2026-06-08'), j200: calcularJuros(200,'2026-05-08','2026-06-08'), j300: calcularJuros(300,'2026-05-08','2026-06-08') });
+    res.json({ sucesso: true, versao: '2026-05-08-v7', j100: calcularJuros(100,'2026-05-08','2026-06-08'), j250: calcularJuros(250,'2026-05-08','2026-06-08'), j300: calcularJuros(300,'2026-05-08','2026-06-08') });
   }
   catch (e) { res.status(500).json({ erro: e.message }); }
 });
