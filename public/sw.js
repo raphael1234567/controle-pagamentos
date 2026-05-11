@@ -1,4 +1,4 @@
-const CACHE = 'pagamentos-v5';
+const CACHE = 'pagamentos-v6';
 const STATIC = [
   '/',
   '/index.html',

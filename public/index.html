@@ -132,11 +132,9 @@
             <label>Data que pegou<input id="dataPagamento" type="date" required /></label>
             <label>Data que vai pagar<input id="dataVencimento" type="date" /></label>
             <label>Valor<input id="valor" type="text" inputmode="decimal" placeholder="Ex: 200,00" required /></label>
+            <label>Total a receber<input id="totalAReceber" type="text" inputmode="decimal" placeholder="Calculado automaticamente" /></label>
           </div>
           <label>Observação<input id="observacao" type="text" placeholder="Opcional" /></label>
-          <div id="grupoTotalReceber" style="display:none">
-            <label>Total a receber (override manual)<input id="totalAReceber" type="text" inputmode="decimal" placeholder="Ex: 280,00" /></label>
-          </div>
           <div class="acoes">
             <button class="btn principal" type="submit">Salvar</button>
             <button class="btn secundario" id="btnCancelar" type="button">Cancelar</button>

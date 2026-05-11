@@ -32,7 +32,6 @@ const selectClienteDash = $('filtroClienteDash');
 const btnCancelar         = $('btnCancelar');
 const tituloForm          = $('tituloForm');
 const totalAReceber       = $('totalAReceber');
-const grupoTotalReceber   = $('grupoTotalReceber');
 
 const inputDataInicio = $('inputDataInicio');
 const inputDataFim    = $('inputDataFim');
@@ -128,6 +127,23 @@ function formatarMesLabel(ym) {
   const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const [ano, mes] = ym.split('-');
   return `${meses[Number(mes) - 1]}/${ano.slice(2)}`;
+}
+
+function calcularJurosFrontend(valor, dataPagamento, dataVencimento) {
+  const pegou = new Date(`${dataPagamento}T00:00:00`);
+  const venc  = new Date(`${dataVencimento}T00:00:00`);
+  let meses = (venc.getFullYear() - pegou.getFullYear()) * 12 + (venc.getMonth() - pegou.getMonth());
+  if (venc.getDate() > pegou.getDate()) meses++;
+  meses = Math.max(1, meses);
+  return Number((valor * 0.40 * Math.pow(1.40, meses - 1)).toFixed(2));
+}
+
+function atualizarTotalCalculado() {
+  const v = toValorNumero(valor.value);
+  if (!v || !dataPagamento.value) { totalAReceber.value = ''; return; }
+  const venc  = dataVencimento.value || calcularVencimento(dataPagamento.value);
+  const juros = calcularJurosFrontend(v, dataPagamento.value, venc);
+  totalAReceber.value = String((v + juros).toFixed(2)).replace('.', ',');
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -584,7 +600,7 @@ async function salvar(e) {
     valor:         toValorNumero(valor.value),
     observacao:    observacao.value
   };
-  if (id && totalAReceber.value.trim()) {
+  if (totalAReceber.value.trim()) {
     payload.totalAReceber = toValorNumero(totalAReceber.value);
   }
   const res  = await fetch(id ? `${API_BASE}/pagamentos/${id}` : `${API_BASE}/pagamentos`, {
@@ -608,7 +624,6 @@ window.editarPagamento = function (id) {
   valor.value          = String(Number(item.valor).toFixed(2)).replace('.', ',');
   observacao.value     = item.observacao || '';
   totalAReceber.value  = String(Number(item.valor_total).toFixed(2)).replace('.', ',');
-  grupoTotalReceber.style.display = '';
   tituloForm.textContent = 'Editar pagamento';
   mostrarSecao('secNovo');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -640,7 +655,6 @@ function limparForm() {
   pagamentoId.value      = '';
   dataVencimento.value   = '';
   totalAReceber.value    = '';
-  grupoTotalReceber.style.display = 'none';
   tituloForm.textContent = 'Novo pagamento';
 }
 
@@ -648,7 +662,11 @@ function limparForm() {
 
 dataPagamento.addEventListener('change', () => {
   dataVencimento.value = calcularVencimento(dataPagamento.value);
+  atualizarTotalCalculado();
 });
+
+valor.addEventListener('input', atualizarTotalCalculado);
+dataVencimento.addEventListener('change', atualizarTotalCalculado);
 
 form.addEventListener('submit', salvar);
 btnCancelar.addEventListener('click', limparForm);

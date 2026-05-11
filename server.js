@@ -408,13 +408,18 @@ app.get('/api/pagamentos', autenticar, async (req, res) => {
 
 app.post('/api/pagamentos', autenticar, async (req, res) => {
   try {
-    const { nome, dataPagamento, dataVencimento, valor, observacao } = req.body;
+    const { nome, dataPagamento, dataVencimento, valor, observacao, totalAReceber } = req.body;
     if (!nome || !dataPagamento || valor == null || valor === '')
       return res.status(400).json({ erro: 'Nome, data que pegou e valor são obrigatórios' });
     const valorNum = toNum(valor);
     if (Number.isNaN(valorNum) || valorNum < 0) return res.status(400).json({ erro: 'Valor inválido' });
-    const venc  = dataVencimento || calcularDataVencimento(dataPagamento);
-    const juros = calcularJuros(valorNum, dataPagamento, venc);
+    const venc = dataVencimento || calcularDataVencimento(dataPagamento);
+    let juros;
+    if (totalAReceber != null && totalAReceber !== '') {
+      juros = Math.max(0, Number((toNum(totalAReceber) - valorNum).toFixed(2)));
+    } else {
+      juros = calcularJuros(valorNum, dataPagamento, venc);
+    }
     await pool.query(
       'INSERT INTO public.pagamentos (usuario_id,nome,data_pagamento,data_vencimento,valor,juros,observacao) VALUES ($1,$2,$3,$4,$5,$6,$7)',
       [req.usuario.id, nome.trim().toUpperCase(), dataPagamento, venc, valorNum, juros, observacao || null]
