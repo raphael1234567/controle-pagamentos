@@ -29,8 +29,10 @@ const busca          = $('busca');
 const filtroStatus   = $('filtroStatus');
 const mesResumo         = $('mesResumo');
 const selectClienteDash = $('filtroClienteDash');
-const btnCancelar    = $('btnCancelar');
-const tituloForm     = $('tituloForm');
+const btnCancelar         = $('btnCancelar');
+const tituloForm          = $('tituloForm');
+const totalAReceber       = $('totalAReceber');
+const grupoTotalReceber   = $('grupoTotalReceber');
 
 const inputDataInicio = $('inputDataInicio');
 const inputDataFim    = $('inputDataFim');
@@ -582,6 +584,9 @@ async function salvar(e) {
     valor:         toValorNumero(valor.value),
     observacao:    observacao.value
   };
+  if (id && totalAReceber.value.trim()) {
+    payload.totalAReceber = toValorNumero(totalAReceber.value);
+  }
   const res  = await fetch(id ? `${API_BASE}/pagamentos/${id}` : `${API_BASE}/pagamentos`, {
     method: id ? 'PUT' : 'POST', headers: headers(true), body: JSON.stringify(payload)
   });
@@ -602,6 +607,8 @@ window.editarPagamento = function (id) {
   dataVencimento.value = item.data_vencimento || calcularVencimento(item.data_pagamento);
   valor.value          = String(Number(item.valor).toFixed(2)).replace('.', ',');
   observacao.value     = item.observacao || '';
+  totalAReceber.value  = String(Number(item.valor_total).toFixed(2)).replace('.', ',');
+  grupoTotalReceber.style.display = '';
   tituloForm.textContent = 'Editar pagamento';
   mostrarSecao('secNovo');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -632,6 +639,8 @@ function limparForm() {
   form.reset();
   pagamentoId.value      = '';
   dataVencimento.value   = '';
+  totalAReceber.value    = '';
+  grupoTotalReceber.style.display = 'none';
   tituloForm.textContent = 'Novo pagamento';
 }
 

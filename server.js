@@ -426,12 +426,18 @@ app.post('/api/pagamentos', autenticar, async (req, res) => {
 
 app.put('/api/pagamentos/:id', autenticar, async (req, res) => {
   try {
-    const { nome, dataPagamento, dataVencimento, valor, observacao } = req.body;
+    const { nome, dataPagamento, dataVencimento, valor, observacao, totalAReceber } = req.body;
     const id       = Number(req.params.id);
     const valorNum = toNum(valor);
     if (Number.isNaN(valorNum) || valorNum < 0) return res.status(400).json({ erro: 'Valor inválido' });
-    const venc  = dataVencimento || calcularDataVencimento(dataPagamento);
-    const juros = calcularJuros(valorNum, dataPagamento, venc);
+    const venc = dataVencimento || calcularDataVencimento(dataPagamento);
+    let juros;
+    if (totalAReceber != null && totalAReceber !== '') {
+      const totalNum = toNum(totalAReceber);
+      juros = Math.max(0, Number((totalNum - valorNum).toFixed(2)));
+    } else {
+      juros = calcularJuros(valorNum, dataPagamento, venc);
+    }
 
     await pool.query(`
       UPDATE public.pagamentos
